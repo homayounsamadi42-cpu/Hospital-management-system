@@ -100,4 +100,25 @@ class PatientController extends Controller
             'message' => 'Patient archived successfully.',
         ]);
     }
+
+    public function archived(): JsonResponse
+{
+    $patients = Patient::onlyTrashed()
+        ->latest('deleted_at')
+        ->paginate(15);
+
+    return response()->json($patients);
+}
+
+    public function restore(string $id): JsonResponse
+    {
+        $patient = Patient::onlyTrashed()->findOrFail($id);
+
+        $patient->restore();
+
+        return response()->json([
+            'message' => 'Patient restored successfully.',
+            'data' => $patient->fresh(),
+        ]);
+    }
 }

@@ -1,7 +1,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, RefreshCw, Users, X, Pencil } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Users,
+  X,
+  Pencil,
+  Archive,
+} from 'lucide-react';
 import api from '../services/api';
 
 
@@ -41,6 +49,15 @@ const translations = {
     edit: 'Edit',
     update: 'Update patient',
     editTitle: 'Edit patient details',
+    archive: 'Archive',
+    archiveConfirm: 'Are you sure you want to archive this patient?',
+    archiveSuccess: 'Patient archived successfully.',
+    viewActive: 'Active patients',
+    viewArchived: 'Archived patients',
+    restore: 'Restore',
+    restoreConfirm: 'Restore this patient?',
+    restoreSuccess: 'Patient restored successfully.',
+    archiveViewEmpty: 'No archived patients found.',
   },
   fa: {
     title: 'بیماران',
@@ -77,6 +94,15 @@ const translations = {
     edit: 'ویرایش',
     update: 'به‌روزرسانی بیمار',
     editTitle: 'ویرایش مشخصات بیمار',
+    archive: 'بایگانی',
+    archiveConfirm: 'آیا مطمئن هستید که می‌خواهید این بیمار را بایگانی کنید؟',
+    archiveSuccess: 'بیمار با موفقیت بایگانی شد.',
+    viewActive: 'بیماران فعال',
+    viewArchived: 'بیماران بایگانی‌شده',
+    restore: 'بازیابی',
+    restoreConfirm: 'آیا این بیمار را بازیابی می‌کنید؟',
+    restoreSuccess: 'بیمار با موفقیت بازیابی شد.',
+    archiveViewEmpty: 'بیمار بایگانی‌شده‌ای یافت نشد.',
   },
   ps: {
     title: 'ناروغان',
@@ -113,6 +139,15 @@ const translations = {
     edit: 'سمون',
     update: 'د ناروغ معلومات تازه کړئ',
     editTitle: 'د ناروغ معلومات سمول',
+    archive: 'آرشیف',
+    archiveConfirm: 'ایا ډاډه یاست چې دا ناروغ آرشیف کړئ؟',
+    archiveSuccess: 'ناروغ په بریالیتوب سره آرشیف شو.',
+    viewActive: 'فعال ناروغان',
+    viewArchived: 'آرشیف شوي ناروغان',
+    restore: 'بېرته راګرځول',
+    restoreConfirm: 'ایا دا ناروغ بېرته راګرځوئ؟',
+    restoreSuccess: 'ناروغ په بریالیتوب بېرته راوګرځول شو.',
+    archiveViewEmpty: 'آرشیف شوی ناروغ ونه موندل شو.',
   },
 };
 
@@ -160,24 +195,28 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [view, setView] = useState('active');
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await api.get('/patients', {
-        params: search.trim() ? { search: search.trim() } : {},
+      const endpoint =
+      view === 'archived' ? '/patients/archived' : '/patients';
+
+      const response = await api.get(endpoint, {
+      params: search.trim() ? { search: search.trim() } : {},
       });
 
-      setPatients(response.data.data || []);
+setPatients(response.data.data || []);
     } catch (err) {
       console.error('Failed to load patients:', err);
       setError(t.failed);
     } finally {
       setLoading(false);
     }
-  }, [search, t.failed]);
+    }, [search, view, t.failed]);
 
   useEffect(() => {
     loadPatients();
@@ -212,6 +251,50 @@ export default function Patients() {
   setError('');
   setMessage('');
 }
+
+  async function handleArchive(patient) {
+  const confirmed = window.confirm(t.archiveConfirm);
+
+  if (!confirmed) return;
+
+  setError('');
+  setMessage('');
+
+  try {
+    await api.delete(`/patients/${patient.id}`);
+
+    setMessage(t.archiveSuccess);
+    await loadPatients();
+  } catch (err) {
+    console.error('Failed to archive patient:', err);
+
+    setError(
+      err.response?.data?.message ||
+      'Unable to archive this patient. Please try again.'
+    );
+  }
+}
+
+  async function handleRestore(patient) {
+    if (!window.confirm(t.restoreConfirm)) return;
+
+    setError('');
+    setMessage('');
+
+    try {
+      await api.patch(`/patients/${patient.id}/restore`);
+
+      setMessage(t.restoreSuccess);
+      await loadPatients();
+    } catch (err) {
+      console.error('Failed to restore patient:', err);
+
+      setError(
+        err.response?.data?.message ||
+        'Unable to restore this patient. Please try again.'
+      );
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -274,6 +357,32 @@ export default function Patients() {
           <p className="mt-1 text-sm text-slate-500">{t.subtitle}</p>
         </div>
 
+        <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setView('active')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === 'active'
+              ? 'bg-blue-600 text-white'
+              : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          {t.viewActive}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setView('archived')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === 'archived'
+              ? 'bg-blue-600 text-white'
+              : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          {t.viewArchived}
+        </button>
+      </div>
+
         <button
           type="button"
           onClick={() => {
@@ -302,7 +411,9 @@ export default function Patients() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="mb-5 text-lg font-semibold text-slate-900">{t.add}</h2>
+          <h2 className="mb-5 text-lg font-semibold text-slate-900">
+            {editingPatient ? t.editTitle : t.add}
+          </h2>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {fields.map((field) => (
@@ -349,11 +460,16 @@ export default function Patients() {
               disabled={saving}
               className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? t.saving : t.save}
+              {saving ? t.saving : editingPatient ? t.update : t.save}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setEditingPatient(null);
+                setForm(initialForm);
+                setError('');
+              }}
               className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               {t.cancel}
@@ -393,7 +509,7 @@ export default function Patients() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-5 py-3 font-semibold">{t.number}</th>
@@ -401,6 +517,7 @@ export default function Patients() {
                 <th className="px-5 py-3 font-semibold">{t.phone}</th>
                 <th className="px-5 py-3 font-semibold">{t.email}</th>
                 <th className="px-5 py-3 font-semibold">{t.blood}</th>
+                <th className="px-5 py-3 font-semibold">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -410,7 +527,7 @@ export default function Patients() {
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-5 py-10 text-center text-slate-500">{t.empty}</td>
+                  <td colSpan="6" className="px-5 py-10 text-center text-slate-500">{view === 'archived' ? t.archiveViewEmpty : t.empty}</td>
                 </tr>
               ) : (
                 patients.map((patient) => (
@@ -422,6 +539,38 @@ export default function Patients() {
                     <td className="px-5 py-4 text-slate-600">{patient.phone || '—'}</td>
                     <td className="px-5 py-4 text-slate-600">{patient.email || '—'}</td>
                     <td className="px-5 py-4 text-slate-600">{patient.blood_group || '—'}</td>
+                    <td className="px-5 py-4">
+                      {view === 'archived' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleRestore(patient)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-green-200 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50"
+                        >
+                          <RefreshCw size={15} />
+                          {t.restore}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(patient)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
+                          >
+                            <Pencil size={15} />
+                            {t.edit}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleArchive(patient)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                          >
+                            <Archive size={15} />
+                            {t.archive}
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}

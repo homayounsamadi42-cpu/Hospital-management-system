@@ -17,4 +17,6 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::get('/patients/archived', [PatientController::class, 'archived']);
+Route::patch('/patients/{id}/restore', [PatientController::class, 'restore']);
 Route::apiResource('patients', PatientController::class);
