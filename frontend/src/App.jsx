@@ -1,36 +1,79 @@
 
-import { useEffect, useState } from 'react';
-import api from './services/api';
+import { useEffect } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
-function App() {
-  const [apiStatus, setApiStatus] = useState('Checking backend connection...');
+import api from './services/api';
+import Sidebar from './components/layout/Sidebar';
+import Topbar from './components/layout/Topbar';
+import Dashboard from './pages/Dashboard';
+import ModulePlaceholder from './pages/ModulePlaceholder';
+import Patients from './pages/Patients';
+
+const languages = {
+  en: 'ltr',
+  fa: 'rtl',
+  ps: 'rtl',
+};
+
+function RoutedApp() {
+  const { i18n } = useTranslation();
 
   useEffect(() => {
-    api.get('/health')
-      .then((response) => {
-        setApiStatus(response.data.message);
-      })
-      .catch((error) => {
-        console.error('API connection failed:', error);
-        setApiStatus('Could not connect to the backend.');
-      });
+    const language = i18n.resolvedLanguage || i18n.language;
+    document.documentElement.lang = language;
+    document.documentElement.dir = languages[language] || 'ltr';
+  }, [i18n.language, i18n.resolvedLanguage]);
+
+  useEffect(() => {
+    api.get('/health').catch((error) => {
+      console.error('Laravel API connection failed:', error);
+    });
   }, []);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <section className="w-full max-w-xl rounded-xl bg-white p-8 shadow-md">
-        <h1 className="mb-4 text-2xl font-bold text-gray-800">
-          Hospital Management System
-        </h1>
+    <div className="min-h-screen bg-slate-100 md:flex">
+      <Sidebar />
 
-        <p className="mb-2 text-gray-600">Backend connection status:</p>
+      <div className="min-w-0 flex-1">
+        <Topbar />
 
-        <p className="font-semibold text-green-700" role="status">
-          {apiStatus}
-        </p>
-      </section>
-    </main>
+        <main className="p-4 sm:p-6 lg:p-8">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route
+              path="/doctors"
+              element={<ModulePlaceholder titleKey="doctors" />}
+            />
+            <Route
+              path="/appointments"
+              element={<ModulePlaceholder titleKey="appointments" />}
+            />
+            <Route
+              path="/departments"
+              element={<ModulePlaceholder titleKey="departments" />}
+            />
+            <Route
+              path="/billing"
+              element={<ModulePlaceholder titleKey="billing" />}
+            />
+            <Route
+              path="/settings"
+              element={<ModulePlaceholder titleKey="settings" />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <RoutedApp />
+    </BrowserRouter>
+  );
+}
