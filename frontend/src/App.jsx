@@ -9,6 +9,10 @@ import Topbar from './components/layout/Topbar';
 import Dashboard from './pages/Dashboard';
 import ModulePlaceholder from './pages/ModulePlaceholder';
 import Patients from './pages/Patients';
+import Doctors from './pages/Doctors';
+import Appointments from './pages/Appointments';
+import Departments from './pages/Departments';
+import Billing from './pages/Billing';
 
 const languages = {
   en: 'ltr',
@@ -42,22 +46,10 @@ function RoutedApp() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/patients" element={<Patients />} />
-            <Route
-              path="/doctors"
-              element={<ModulePlaceholder titleKey="doctors" />}
-            />
-            <Route
-              path="/appointments"
-              element={<ModulePlaceholder titleKey="appointments" />}
-            />
-            <Route
-              path="/departments"
-              element={<ModulePlaceholder titleKey="departments" />}
-            />
-            <Route
-              path="/billing"
-              element={<ModulePlaceholder titleKey="billing" />}
-            />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/departments" element={<Departments />} />
+            <Route path="/billing" element={<Billing />} />
             <Route
               path="/settings"
               element={<ModulePlaceholder titleKey="settings" />}

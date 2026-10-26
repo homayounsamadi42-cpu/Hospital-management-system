@@ -9,6 +9,7 @@ import {
   X,
   Pencil,
   Archive,
+  Eye,
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -58,6 +59,13 @@ const translations = {
     restoreConfirm: 'Restore this patient?',
     restoreSuccess: 'Patient restored successfully.',
     archiveViewEmpty: 'No archived patients found.',
+    viewDetails: 'View details',
+    patientDetails: 'Patient details',
+    personalInfo: 'Personal information',
+    contactInfo: 'Contact information',
+    medicalInfo: 'Medical information',
+    notProvided: 'Not provided',
+    close: 'Close',
   },
   fa: {
     title: 'بیماران',
@@ -103,6 +111,13 @@ const translations = {
     restoreConfirm: 'آیا این بیمار را بازیابی می‌کنید؟',
     restoreSuccess: 'بیمار با موفقیت بازیابی شد.',
     archiveViewEmpty: 'بیمار بایگانی‌شده‌ای یافت نشد.',
+    viewDetails: 'مشاهده جزئیات',
+    patientDetails: 'مشخصات بیمار',
+    personalInfo: 'اطلاعات شخصی',
+    contactInfo: 'اطلاعات تماس',
+    medicalInfo: 'اطلاعات طبی',
+    notProvided: 'ثبت نشده',
+    close: 'بستن',
   },
   ps: {
     title: 'ناروغان',
@@ -148,6 +163,13 @@ const translations = {
     restoreConfirm: 'ایا دا ناروغ بېرته راګرځوئ؟',
     restoreSuccess: 'ناروغ په بریالیتوب بېرته راوګرځول شو.',
     archiveViewEmpty: 'آرشیف شوی ناروغ ونه موندل شو.',
+    viewDetails: 'د معلوماتو کتل',
+    patientDetails: 'د ناروغ معلومات',
+    personalInfo: 'شخصي معلومات',
+    contactInfo: 'د اړیکو معلومات',
+    medicalInfo: 'طبي معلومات',
+    notProvided: 'نه دي ثبت شوي',
+    close: 'بندول',
   },
 };
 
@@ -196,6 +218,7 @@ export default function Patients() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [view, setView] = useState('active');
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
@@ -318,19 +341,15 @@ setPatients(response.data.data || []);
         }
       });
 
-      const response = editingPatient
+      const wasEditing = Boolean(editingPatient);
+      const response = wasEditing
         ? await api.put(`/patients/${editingPatient.id}`, payload)
         : await api.post('/patients', payload);
 
-        setForm(initialForm);
-        setEditingPatient(null);
-        setShowForm(false);
-        setMessage(response.data.message || (editingPatient ? t.update : t.success));
-        await loadPatients();
-
       setForm(initialForm);
+      setEditingPatient(null);
       setShowForm(false);
-      setMessage(response.data.message || t.success);
+      setMessage(response.data.message || (wasEditing ? t.update : t.success));
       await loadPatients();
     } catch (err) {
       console.error('Failed to register patient:', err);
@@ -553,6 +572,15 @@ setPatients(response.data.data || []);
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
+                            onClick={() => setSelectedPatient(patient)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+                          >
+                            <Eye size={15} />
+                            {t.viewDetails}
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => handleEdit(patient)}
                             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
                           >
@@ -578,6 +606,95 @@ setPatients(response.data.data || []);
           </table>
         </div>
       </div>
+
+      {selectedPatient && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+          onClick={() => setSelectedPatient(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="patient-details-title"
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 p-5">
+              <div>
+                <h2 id="patient-details-title" className="text-xl font-bold text-slate-900">
+                  {t.patientDetails}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">{selectedPatient.patient_number}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPatient(null)}
+                aria-label={t.close}
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-6 p-5 sm:p-6">
+              <div>
+                <h3 className="mb-3 text-base font-semibold text-slate-900">{t.personalInfo}</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetailField label={t.number} value={selectedPatient.patient_number} fallback={t.notProvided} />
+                  <DetailField label={t.name} value={`${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim()} fallback={t.notProvided} />
+                  <DetailField label={t.dob} value={selectedPatient.date_of_birth?.slice(0, 10)} fallback={t.notProvided} />
+                  <DetailField
+                    label={t.gender}
+                    value={selectedPatient.gender ? ({ male: t.male, female: t.female, other: t.other }[selectedPatient.gender] || selectedPatient.gender) : ''}
+                    fallback={t.notProvided}
+                  />
+                  <DetailField label={t.blood} value={selectedPatient.blood_group} fallback={t.notProvided} />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="mb-3 text-base font-semibold text-slate-900">{t.contactInfo}</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetailField label={t.phone} value={selectedPatient.phone} fallback={t.notProvided} />
+                  <DetailField label={t.email} value={selectedPatient.email} fallback={t.notProvided} />
+                  <DetailField label={t.address} value={selectedPatient.address} fallback={t.notProvided} />
+                  <DetailField label={t.emergencyName} value={selectedPatient.emergency_contact_name} fallback={t.notProvided} />
+                  <DetailField label={t.emergencyPhone} value={selectedPatient.emergency_contact_phone} fallback={t.notProvided} />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="mb-3 text-base font-semibold text-slate-900">{t.medicalInfo}</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <DetailField label={t.allergies} value={selectedPatient.allergies} fallback={t.notProvided} />
+                  <DetailField label={t.notes} value={selectedPatient.medical_notes} fallback={t.notProvided} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-slate-200 p-5">
+              <button
+                type="button"
+                onClick={() => setSelectedPatient(null)}
+                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function DetailField({ label, value, fallback }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-medium text-slate-900">
+        {value || fallback}
+      </p>
+    </div>
   );
 }
