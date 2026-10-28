@@ -13,6 +13,7 @@ import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
 import Departments from './pages/Departments';
 import Billing from './pages/Billing';
+import Pharmacy from './pages/Pharmacy';
 
 const languages = {
   en: 'ltr',
@@ -50,6 +51,7 @@ function RoutedApp() {
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/pharmacy" element={<Pharmacy />} />
             <Route
               path="/settings"
               element={<ModulePlaceholder titleKey="settings" />}

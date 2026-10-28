@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Http\Controllers\Api\AppointmentController;
@@ -7,8 +6,10 @@ use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\MedicineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\StockAdjustmentController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -21,6 +22,14 @@ Route::get('/health', function () {
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+
+Route::get('/medicines/archived', [MedicineController::class, 'archived']);
+Route::patch('/medicines/{id}/restore', [MedicineController::class, 'restore']);
+Route::get('/medicines/low-stock', [MedicineController::class, 'lowStock']);
+Route::get('/medicines/expiring-soon', [MedicineController::class, 'expiringSoon']);
+Route::apiResource('medicines', MedicineController::class);
+
 
 // Patient routes
 Route::get('/patients/archived', [PatientController::class, 'archived']);
@@ -45,6 +54,15 @@ Route::apiResource('departments', DepartmentController::class);
 // Billing: invoice routes
 Route::get('/invoices/archived', [InvoiceController::class, 'archived']);
 Route::patch('/invoices/{id}/restore', [InvoiceController::class, 'restore']);
+Route::get(
+    '/stock-adjustments',
+    [StockAdjustmentController::class, 'index']
+);
+
+Route::post(
+    '/stock-adjustments',
+    [StockAdjustmentController::class, 'store']
+);
 
 // Payment routes must be registered before the invoice resource routes.
 Route::get('/payments', [PaymentController::class, 'index']);

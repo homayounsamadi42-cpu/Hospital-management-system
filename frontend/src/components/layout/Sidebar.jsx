@@ -1,5 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
+import { Pill } from 'lucide-react';
 import {
   Activity,
   CalendarDays,
@@ -19,6 +20,7 @@ const navigation = [
   { label: 'appointments', path: '/appointments', icon: CalendarDays },
   { label: 'departments', path: '/departments', icon: ClipboardList },
   { label: 'billing', path: '/billing', icon: CreditCard },
+  { label: 'pharmacy',path: '/pharmacy',icon: Pill,},
   { label: 'settings', path: '/settings', icon: Settings },
 ];
 
